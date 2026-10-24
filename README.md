@@ -23,6 +23,7 @@ clone-webbrain/
 ├── api/
 │   └── server.js            # Vercel serverless API (mongoose, CRUD, CORS, auth)
 ├── public/
+│   ├── index.html           # Deployment landing page + API status
 │   └── manage.html          # Admin CRUD page (X-Admin-Key)
 ├── popup/
 │   ├── popup.html           # "Daily Tasks" tab + settings
@@ -300,6 +301,8 @@ curl https://YOUR-PROJECT.vercel.app/api/health
 | Empty task list | Database not seeded: `npm run seed`, or wrong database name. |
 | `409` on create | Day already exists; edit the existing task or pick another day. |
 | WebBrain MCP unavailable | Cloud bridge URL must be `ws://127.0.0.1:17374/extension` and enabled. |
+| `/` shows `404 NOT_FOUND` | Project Settings → Build & Development Settings: **Root Directory** must be the repo root (empty), **Framework Preset** = Other, **Output Directory** = `public`. `vercel.json` also sets `outputDirectory`. |
+| `/api/health` returns the 404 page | The `api/` folder was not deployed: Root Directory is probably set to `public` instead of the repo root, or the Git integration is not redeploying `main`. |
 
 ## License
 

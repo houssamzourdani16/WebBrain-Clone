@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Clone WebBrain — Task System</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121c2e;
+      --border: #26344e;
+      --text: #e6edf7;
+      --muted: #93a4bf;
+      --accent: #5b8def;
+      --green: #2fbf71;
+      --red: #e0596b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px 18px;
+      background: radial-gradient(1100px 560px at 20% -10%, #16233c 0%, var(--bg) 55%);
+      color: var(--text);
+      font: 15px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    main {
+      width: min(720px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+    .logo {
+      width: 44px; height: 44px; border-radius: 12px; flex: none;
+      display: grid; place-items: center; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), #7f5bef);
+    }
+    h1 { margin: 0; font-size: 23px; letter-spacing: 0.2px; }
+    .tag { margin: 0; color: var(--muted); font-size: 13px; }
+    p.lead { color: var(--muted); margin: 18px 0 22px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    a.card {
+      display: block;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #17233a;
+      color: var(--text);
+      text-decoration: none;
+      transition: border-color 0.15s, transform 0.1s, background 0.15s;
+    }
+    a.card:hover { border-color: var(--accent); background: #1b2a45; transform: translateY(-1px); }
+    a.card strong { display: block; font-size: 14px; margin-bottom: 4px; }
+    a.card span { color: var(--muted); font-size: 12.5px; }
+    .status {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 22px; padding: 8px 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: #17233a;
+      font-size: 12.5px; color: var(--muted);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+    .dot.ok { background: var(--green); box-shadow: 0 0 8px rgba(47, 191, 113, 0.7); }
+    .dot.bad { background: var(--red); }
+    footer { margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border); color: var(--muted); font-size: 12px; }
+    code { background: #17233a; border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">
+      <div class="logo">CW</div>
+      <div>
+        <h1>Clone WebBrain</h1>
+        <p class="tag">30-day Facebook task system · MongoDB Atlas · Vercel API</p>
+      </div>
+    </div>
+
+    <p class="lead">
+      This deployment hosts the task API and the admin CRUD page. The Chrome extension talks to
+      the same API using the <code>EXTENSION_API_KEY</code>.
+    </p>
+
+    <div class="cards">
+      <a class="card" href="/manage.html">
+        <strong>Open the task manager →</strong>
+        <span>Add, edit and delete the 30 daily tasks. Requires your admin key.</span>
+      </a>
+      <a class="card" href="/api/tasks" target="_blank" rel="noopener">
+        <strong>View tasks JSON →</strong>
+        <span>Public endpoint used by the extension and the AI agent.</span>
+      </a>
+      <a class="card" href="/api/health" target="_blank" rel="noopener">
+        <strong>API health →</strong>
+        <span>Shows MongoDB connection status.</span>
+      </a>
+    </div>
+
+    <div class="status">
+      <span id="dot" class="dot"></span>
+      <span id="statusText">Checking API and database…</span>
+    </div>
+
+    <footer>
+      MongoDB credentials stay in Vercel environment variables. The extension stores only the API
+      base URL and the extension API key.
+    </footer>
+  </main>
+
+  <script>
+    (async () => {
+      const dot = document.getElementById('dot');
+      const text = document.getElementById('statusText');
+      try {
+        const res = await fetch('/api/health', { cache: 'no-store' });
+        const data = await res.json();
+        if (data.db === 'connected') {
+          dot.classList.add('ok');
+          text.textContent = 'API online · MongoDB connected';
+        } else {
+          dot.classList.add('bad');
+          text.textContent = 'API reachable, but MongoDB is not connected (check MONGODB_URI)';
+        }
+      } catch (_err) {
+        dot.classList.add('bad');
+        text.textContent = 'API not reachable from this page';
+      }
+    })();
+  </script>
+</body>
+</html>
