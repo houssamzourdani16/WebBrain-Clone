@@ -4,132 +4,296 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Clone WebBrain — Task System</title>
+  <title>Clone WebBrain — What this site is</title>
   <style>
     :root {
       --bg: #0b1220;
       --panel: #121c2e;
+      --panel-2: #17233a;
       --border: #26344e;
       --text: #e6edf7;
       --muted: #93a4bf;
       --accent: #5b8def;
       --green: #2fbf71;
+      --amber: #e7a53a;
       --red: #e0596b;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 28px 18px;
-      background: radial-gradient(1100px 560px at 20% -10%, #16233c 0%, var(--bg) 55%);
+      background: radial-gradient(1100px 560px at 18% -10%, #16233c 0%, var(--bg) 55%);
       color: var(--text);
-      font: 15px/1.6 "Segoe UI", system-ui, -apple-system, sans-serif;
+      font: 15px/1.65 "Segoe UI", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
     }
-    main {
-      width: min(720px, 100%);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-    }
-    .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 34px 20px 70px; }
+    .top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
     .logo {
-      width: 44px; height: 44px; border-radius: 12px; flex: none;
-      display: grid; place-items: center; font-weight: 800;
+      width: 46px; height: 46px; border-radius: 13px; flex: none;
+      display: grid; place-items: center; font-weight: 800; font-size: 15px;
       background: linear-gradient(135deg, var(--accent), #7f5bef);
     }
-    h1 { margin: 0; font-size: 23px; letter-spacing: 0.2px; }
-    .tag { margin: 0; color: var(--muted); font-size: 13px; }
-    p.lead { color: var(--muted); margin: 18px 0 22px; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-    a.card {
-      display: block;
-      padding: 16px;
+    h1 { margin: 0; font-size: 25px; letter-spacing: 0.2px; }
+    .sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+    .banner {
+      margin: 22px 0 24px;
+      padding: 16px 18px;
       border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #17233a;
-      color: var(--text);
-      text-decoration: none;
-      transition: border-color 0.15s, transform 0.1s, background 0.15s;
+      border: 1px solid rgba(91, 141, 239, 0.45);
+      background: rgba(91, 141, 239, 0.1);
+      font-size: 14.5px;
     }
-    a.card:hover { border-color: var(--accent); background: #1b2a45; transform: translateY(-1px); }
-    a.card strong { display: block; font-size: 14px; margin-bottom: 4px; }
-    a.card span { color: var(--muted); font-size: 12.5px; }
-    .status {
+    .banner b { color: #fff; }
+    h2 { font-size: 18px; margin: 34px 0 6px; }
+    .section-sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0 4px; }
+    .stat {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+    }
+    .stat span { display: block; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; }
+    .stat strong { font-size: 24px; line-height: 1.3; }
+    .stat small { color: var(--muted); font-size: 12px; }
+    .progress { height: 8px; border-radius: 999px; background: #1d2a42; overflow: hidden; margin-top: 12px; }
+    .progress > i { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 0.4s; }
+    .next {
+      margin-top: 14px; padding: 13px 16px; border-radius: 11px;
+      border: 1px solid var(--border); background: var(--panel);
+      font-size: 13.5px; color: var(--muted);
+    }
+    .next b { color: var(--text); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 13px; padding: 18px;
+    }
+    .card .num {
+      display: inline-grid; place-items: center; width: 26px; height: 26px;
+      border-radius: 8px; background: rgba(91, 141, 239, 0.16);
+      border: 1px solid rgba(91, 141, 239, 0.4);
+      color: #b9d0ff; font-size: 13px; font-weight: 700; margin-bottom: 8px;
+    }
+    .card h3 { margin: 0 0 6px; font-size: 15.5px; }
+    .card p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+    .card a { color: #9fc0ff; font-size: 13px; font-weight: 600; text-decoration: none; }
+    .card a:hover { text-decoration: underline; }
+    .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .steps li {
+      position: relative; padding: 13px 16px 13px 48px;
+      border: 1px solid var(--border); border-radius: 11px; background: var(--panel);
+      font-size: 13.5px; color: var(--muted);
+    }
+    .steps li::before {
+      counter-increment: step; content: counter(step);
+      position: absolute; left: 14px; top: 12px;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--accent); color: #fff; font-size: 12px; font-weight: 700;
+    }
+    .steps li b { color: var(--text); }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; background: var(--panel-2); }
+    td code { color: #b9d0ff; }
+    .table-wrap { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .status-line {
       display: inline-flex; align-items: center; gap: 8px;
-      margin-top: 22px; padding: 8px 12px; border-radius: 999px;
-      border: 1px solid var(--border); background: #17233a;
+      margin-top: 16px; padding: 7px 12px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--panel);
       font-size: 12.5px; color: var(--muted);
     }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
     .dot.ok { background: var(--green); box-shadow: 0 0 8px rgba(47, 191, 113, 0.7); }
     .dot.bad { background: var(--red); }
-    footer { margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border); color: var(--muted); font-size: 12px; }
-    code { background: #17233a; border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+    .note {
+      margin-top: 26px; padding: 14px 16px; border-radius: 11px;
+      border: 1px dashed var(--border); color: var(--muted); font-size: 12.5px;
+    }
+    code { background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+    .hidden { display: none !important; }
+    @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   </style>
 </head>
 <body>
-  <main>
-    <div class="brand">
+  <div class="wrap">
+    <div class="top">
       <div class="logo">CW</div>
       <div>
         <h1>Clone WebBrain</h1>
-        <p class="tag">30-day Facebook task system · MongoDB Atlas · Vercel API</p>
+        <p class="sub">A 30-day Facebook task plan · this website is its control panel</p>
       </div>
     </div>
 
-    <p class="lead">
-      This deployment hosts the task API and the admin CRUD page. The Chrome extension talks to
-      the same API using the <code>EXTENSION_API_KEY</code>.
-    </p>
+    <div class="banner">
+      <b>Short version:</b> this site stores and shows a 30-day list of Facebook tasks. The
+      <b>Chrome extension</b> shows the list to you. The <b>AI agent</b> (WebBrain) does the actual
+      posting on Facebook, then ticks the task as done. Nothing is posted by this website itself.
+    </div>
+
+    <h2>Current plan status</h2>
+    <p class="section-sub">Read live from the database through <code>/api/tasks</code>.</p>
+
+    <div class="stats">
+      <div class="stat"><span>Total tasks</span><strong id="statTotal">—</strong><small>days 1–30</small></div>
+      <div class="stat"><span>Done</span><strong id="statDone">—</strong><small>completed by the AI</small></div>
+      <div class="stat"><span>Pending</span><strong id="statPending">—</strong><small>still to do</small></div>
+      <div class="stat"><span>Progress</span><strong id="statProgress">—</strong><small>of the 30 days</small></div>
+    </div>
+    <div class="progress"><i id="progressBar"></i></div>
+    <div id="nextTask" class="next">Loading the next pending task…</div>
+    <div id="apiStatus" class="status-line"><span id="dot" class="dot"></span><span id="statusText">Checking API…</span></div>
+
+    <h2>The three parts (and what each one does)</h2>
+    <p class="section-sub">They share one database. You only interact with the first two.</p>
 
     <div class="cards">
-      <a class="card" href="/manage.html">
-        <strong>Open the task manager →</strong>
-        <span>Add, edit and delete the 30 daily tasks. Requires your admin key.</span>
-      </a>
-      <a class="card" href="/api/tasks" target="_blank" rel="noopener">
-        <strong>View tasks JSON →</strong>
-        <span>Public endpoint used by the extension and the AI agent.</span>
-      </a>
-      <a class="card" href="/api/health" target="_blank" rel="noopener">
-        <strong>API health →</strong>
-        <span>Shows MongoDB connection status.</span>
-      </a>
+      <div class="card">
+        <div class="num">1</div>
+        <h3>Chrome extension — “Daily Tasks”</h3>
+        <p>
+          The popup shows all 30 days with ✅ Done or ⏳ Pending and the prompt for each day.
+          It is <b>read-only</b>: you cannot tick a task yourself, because only the AI is allowed to
+          confirm a task was really completed on Facebook.
+        </p>
+        <a href="#setup">How to install it ↓</a>
+      </div>
+
+      <div class="card">
+        <div class="num">2</div>
+        <h3>Task manager — this site, second page</h3>
+        <p>
+          Where you edit the plan: add a task, change its wording, delete one, or reset its status.
+          Protected by your <b>admin key</b>. Opening it asks for that key once and remembers it in
+          your browser.
+        </p>
+        <a href="/manage.html">Open the task manager →</a>
+      </div>
+
+      <div class="card">
+        <div class="num">3</div>
+        <h3>AI agent — WebBrain + MCP</h3>
+        <p>
+          You paste <code>DAILY_AGENT_PROMPT.md</code> into the agent every day. It reads that day’s
+          task, performs it on facebook.com with human-like timing, checks the result, and marks the
+          task done. If it fails, the task stays pending.
+        </p>
+        <a href="/api/tasks" target="_blank" rel="noopener">See the raw task data →</a>
+      </div>
     </div>
 
-    <div class="status">
-      <span id="dot" class="dot"></span>
-      <span id="statusText">Checking API and database…</span>
+    <h2>How one day works</h2>
+    <ol class="steps">
+      <li><b>You open the extension</b> and look at today’s task, or the AI reads it from the API.</li>
+      <li><b>The AI agent posts / comments / updates</b> the Facebook page using WebBrain MCP.</li>
+      <li><b>The AI verifies</b> the result is visible, then calls <code>PATCH /api/tasks/{day}</code> with <code>status: "done"</code>.</li>
+      <li><b>You press Refresh</b> in the extension popup — that day is now ✅ Done.</li>
+    </ol>
+
+    <h2>What the fields mean</h2>
+    <p class="section-sub">These are the only columns stored for each of the 30 days.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:150px">Field</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>Day</code></td><td>The day number of the plan, 1 to 30. Each day can exist only once.</td></tr>
+          <tr><td><code>Title</code></td><td>A short name for the task, e.g. “Update the profile bio”.</td></tr>
+          <tr><td><code>Prompt</code></td><td>The instruction the AI agent follows, e.g. “Write and publish a post about organic farming”.</td></tr>
+          <tr><td><code>Details</code></td><td>The fine print: tone, length, rules, what counts as success.</td></tr>
+          <tr><td><code>Status</code></td><td><b>⏳ Pending</b> = not done yet. <b>✅ Done</b> = the AI verified it on Facebook.</td></tr>
+          <tr><td><code>Completed by / at</code></td><td>Who ticked it (normally <code>ai_agent</code>) and when.</td></tr>
+        </tbody>
+      </table>
     </div>
 
-    <footer>
-      MongoDB credentials stay in Vercel environment variables. The extension stores only the API
-      base URL and the extension API key.
-    </footer>
-  </main>
+    <h2 id="setup">What you need to do (once)</h2>
+    <ol class="steps">
+      <li><b>Open the task manager</b> with your admin key: <a href="/manage.html" style="color:#9fc0ff">/manage.html</a>. Review or edit the 30 tasks.</li>
+      <li><b>Install the extension</b>: <code>chrome://extensions</code> → Developer mode → Load unpacked → select the project folder.</li>
+      <li><b>Connect the popup</b>: Settings tab → API base URL = this site’s address → Extension API key = the <code>EXTENSION_API_KEY</code> from Vercel.</li>
+      <li><b>Connect WebBrain</b>: Settings → General → Advanced → Cloud bridge → <code>ws://127.0.0.1:17374/extension</code> → enable.</li>
+      <li><b>Each day</b>: copy the prompt from <code>DAILY_AGENT_PROMPT.md</code>, fill in the day number, send it to the agent, then Refresh the popup.</li>
+    </ol>
 
+    <div class="note">
+      <b>Privacy:</b> the database password lives only in Vercel’s environment variables. The Chrome
+      extension stores only two things: this site’s URL and the extension API key. The admin key is
+      kept in this browser’s local storage after you enter it.
+      <br /><br />
+      <b>Not sure which page you need?</b> You are on the overview page. Task editing is at
+      <a href="/manage.html" style="color:#9fc0ff">/manage.html</a>; the data the extension reads is
+      at <a href="/api/tasks" style="color:#9fc0ff">/api/tasks</a>.
+    </div>
+  </div>
   <script>
-    (async () => {
-      const dot = document.getElementById('dot');
-      const text = document.getElementById('statusText');
-      try {
-        const res = await fetch('/api/health', { cache: 'no-store' });
-        const data = await res.json();
-        if (data.db === 'connected') {
-          dot.classList.add('ok');
-          text.textContent = 'API online · MongoDB connected';
-        } else {
+    (function () {
+      const el = (id) => document.getElementById(id);
+
+      async function checkStatus() {
+        const dot = el('dot');
+        const text = el('statusText');
+        try {
+          const res = await fetch('/api/health', { cache: 'no-store' });
+          const data = await res.json();
+          if (data.db === 'connected') {
+            dot.classList.add('ok');
+            text.textContent = 'API online · database connected';
+          } else {
+            dot.classList.add('bad');
+            text.textContent = 'API online, but the database is not connected — check MONGODB_URI in Vercel';
+          }
+        } catch (_err) {
           dot.classList.add('bad');
-          text.textContent = 'API reachable, but MongoDB is not connected (check MONGODB_URI)';
+          text.textContent = 'API not reachable from this page';
         }
-      } catch (_err) {
-        dot.classList.add('bad');
-        text.textContent = 'API not reachable from this page';
       }
+
+      async function loadTasks() {
+        try {
+          const res = await fetch('/api/tasks', { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+          const done = tasks.filter((t) => t.status === 'done').length;
+          const pending = tasks.length - done;
+          const percent = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+
+          el('statTotal').textContent = String(tasks.length);
+          el('statDone').textContent = String(done);
+          el('statPending').textContent = String(pending);
+          el('statProgress').textContent = tasks.length ? percent + '%' : '—';
+          el('progressBar').style.width = percent + '%';
+
+          const next = tasks.find((t) => t.status !== 'done');
+          const nextBox = el('nextTask');
+          if (!tasks.length) {
+            nextBox.textContent = 'No tasks in the database yet. Open the task manager to add them.';
+          } else if (!next) {
+            nextBox.innerHTML = '<b>All 30 tasks are done.</b> Nothing left to run.';
+          } else {
+            nextBox.innerHTML =
+              '<b>Next up — Day ' + next.day + ':</b> ' + escapeHtml(next.title) +
+              (next.prompt ? ' — ' + escapeHtml(next.prompt) : '');
+          }
+        } catch (_err) {
+          el('nextTask').textContent =
+            'Could not load the task list from the API. Check the deployment and MONGODB_URI.';
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      checkStatus();
+      loadTasks();
     })();
   </script>
 </body>

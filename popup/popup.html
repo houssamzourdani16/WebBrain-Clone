@@ -60,6 +60,13 @@
     .tab.active { color: var(--text); border-bottom-color: var(--accent); background: rgba(91, 141, 239, 0.08); }
     main { overflow-y: auto; flex: 1; padding: 12px 12px 14px; }
     .hidden { display: none !important; }
+    .popup-explainer {
+      margin: 0 0 10px; padding: 9px 10px;
+      border: 1px solid rgba(91, 141, 239, 0.32);
+      background: rgba(91, 141, 239, 0.08);
+      border-radius: 9px; color: #b9c9e2; font-size: 11px; line-height: 1.45;
+    }
+    .popup-explainer b { color: #e6edf7; }
     .summary { margin-bottom: 10px; }
     .summary-row { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-bottom: 5px; }
     .summary-row strong { color: var(--text); }
@@ -144,6 +151,10 @@
 
     <main>
       <section id="tab-tasks">
+        <p class="popup-explainer">
+          Your 30-day plan, read live from the database. This list is <b>read-only</b> — the AI agent
+          ticks a day as done after it finishes the task on Facebook. Press <b>Refresh</b> to update.
+        </p>
         <div id="summary" class="summary hidden">
           <div class="summary-row">
             <span><strong id="doneCount">0</strong> done · <strong id="pendingCount">0</strong> pending</span>
