@@ -181,6 +181,12 @@
       </div>
     </div>
 
+    <div class="banner" style="margin-top: 14px;">
+      <b>Set up the agent:</b> choose your AI model, page details, tone, delays and API keys, then
+      generate the daily prompt on the
+      <a href="/settings.html" style="color:#fff; font-weight:700;">Agent Settings page →</a>
+    </div>
+
     <h2>How one day works</h2>
     <ol class="steps">
       <li><b>You open the extension</b> and look at today’s task, or the AI reads it from the API.</li>
@@ -213,6 +219,7 @@
       <li><b>Open the task manager</b> with your admin key: <a href="/manage.html" style="color:#9fc0ff">/manage.html</a>. Review or edit the 30 tasks.</li>
       <li><b>Install the extension</b>: <code>chrome://extensions</code> → Developer mode → Load unpacked → select the project folder.</li>
       <li><b>Connect the popup</b>: Settings tab → API base URL = this site’s address → Extension API key = the <code>EXTENSION_API_KEY</code> from Vercel.</li>
+      <li><b>Choose the AI model</b> and voice on the <a href="/settings.html" style="color:#9fc0ff">Agent Settings page</a>, then generate that day’s prompt there.</li>
       <li><b>Connect WebBrain</b>: Settings → General → Advanced → Cloud bridge → <code>ws://127.0.0.1:17374/extension</code> → enable.</li>
       <li><b>Each day</b>: copy the prompt from <code>DAILY_AGENT_PROMPT.md</code>, fill in the day number, send it to the agent, then Refresh the popup.</li>
     </ol>

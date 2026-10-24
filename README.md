@@ -24,7 +24,8 @@ clone-webbrain/
 │   └── server.js            # Vercel serverless API (mongoose, CRUD, CORS, auth)
 ├── public/
 │   ├── index.html           # Deployment landing page + API status
-│   └── manage.html          # Admin CRUD page (X-Admin-Key)
+│   ├── manage.html          # Admin CRUD page (X-Admin-Key)
+│   └── settings.html        # Agent settings: model, voice, local keys, prompt generator
 ├── popup/
 │   ├── popup.html           # "Daily Tasks" tab + settings
 │   └── popup.js             # chrome.storage.local + GET /api/tasks
@@ -163,6 +164,39 @@ Notes:
 - If you clear the key with **Lock / change key**, the saved key is removed from `localStorage`.
 - CORS is handled by the API; no proxy is required.
 
+### Agent Settings page (`/settings.html`)
+
+Choose the AI model and behaviour that the daily agent should use:
+
+| Setting | Example | Stored where |
+| --- | --- | --- |
+| Provider / model / temperature / max tokens | `openai` / `gpt-4.1` / `0.7` / `2048` | MongoDB `settings` document |
+| Facebook page name + URL | `Green Valley Farm` / page link | MongoDB |
+| Language, tone, hashtags | `English`, `friendly`, `#organic` | MongoDB |
+| Timezone + daily run time | `Africa/Casablanca`, `09:00` | MongoDB |
+| Human delays + typing speed | `2000`–`5000` ms, `80` ms/key | MongoDB |
+| Extra instructions | “never mention prices” | MongoDB |
+| Extension API key | `EXTENSION_API_KEY` | **browser localStorage only** |
+| AI provider key (optional) | `sk-…` | **browser localStorage only** |
+
+The page also generates the full daily prompt (`GET /api/agent-prompt?day=N`) and lets you copy or
+download it as `.md`. If you tick “Insert my extension key”, the `{{EXTENSION_API_KEY}}` placeholder
+is replaced in the browser only — keys are never written to MongoDB.
+
+```bash
+# Read settings (public, no secrets)
+curl https://YOUR-PROJECT.vercel.app/api/settings
+
+# Update settings (admin)
+curl -X PUT https://YOUR-PROJECT.vercel.app/api/settings \
+  -H "X-Admin-Key: $ADMIN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"anthropic","model":"claude-sonnet-4-5","temperature":0.6,"tone":"warm and practical"}'
+
+# Generate the prompt for day 7
+curl "https://YOUR-PROJECT.vercel.app/api/agent-prompt?day=7"
+```
+
 ---
 
 ## Extension Task Tab
@@ -237,6 +271,9 @@ CORS allows `chrome-extension://` origins and the admin page, with headers
 | `PATCH` | `/api/tasks/:day` | `X-API-Key` (status only) or `X-Admin-Key` (full edit) | `{ status, completedBy }` or `{ title, prompt, details, status }` | `200 { task }` | `400`, `401`, `404`, `500` |
 | `POST` | `/api/tasks` | `X-Admin-Key` | `{ day, title, prompt?, details?, status? }` | `201 { task }` | `400`, `401`, `409`, `500` |
 | `DELETE` | `/api/tasks/:day` | `X-Admin-Key` | — | `200 { deleted: true, day }` | `400`, `401`, `404`, `500` |
+| `GET` | `/api/settings` | none | — | `200 { settings }` (no secrets) | `500` |
+| `PUT` | `/api/settings` | `X-Admin-Key` | `{ provider, model, temperature, maxTokens, language, tone, pageName, pageUrl, hashtags, timezone, dailyTime, minDelayMs, maxDelayMs, typingDelayMs, extraInstructions }` (all optional) | `200 { settings }` | `400`, `401`, `500` |
+| `GET` | `/api/agent-prompt?day=N` | none | — | `200 { day, model, provider, prompt }` | `400`, `404`, `500` |
 | `GET` | `/api/health` | none | — | `200 { ok, db, time }` | `200` (reports `disconnected`) |
 | `OPTIONS` | any | none | — | `204` | — |
 

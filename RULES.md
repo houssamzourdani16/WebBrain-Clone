@@ -47,7 +47,10 @@ The popup is read-only for task status.
   source-controlled `.env` files, screenshots or documentation examples that look real.
 - The extension stores exactly two values: `cloneWebBrain.apiBaseUrl` and
   `cloneWebBrain.extensionApiKey`.
-- `ADMIN_API_KEY` lives only in `localStorage` of the admin CRUD page, entered manually by the owner.
+- `ADMIN_API_KEY` lives only in `localStorage` of the admin pages (`manage.html`, `settings.html`),
+  entered manually by the owner.
+- AI provider keys are never stored in MongoDB. If a page collects one, it stays in that browser's
+  `localStorage` and is never transmitted to the API.
 - `.env` is git-ignored. `.env.example` must contain placeholders only.
 - Never log secrets. Redact any key before logging (`sk_live_…` → `sk_…`).
 - Any newly discovered credential leak must be reported and rotated.

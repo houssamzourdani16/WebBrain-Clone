@@ -43,6 +43,21 @@
  *   Auth   : none
  *   Returns: 200 { ok: true, db: "connected" | "disconnected", time }
  *
+ * GET /api/settings
+ *   Auth   : none (contains no secrets)
+ *   Returns: 200 { settings: Settings } — defaults merged with the saved document
+ *
+ * PUT /api/settings
+ *   Auth   : X-Admin-Key: ADMIN_API_KEY
+ *   Body   : { provider?, model?, temperature?, maxTokens?, language?, tone?,
+ *              pageName?, pageUrl?, hashtags?, timezone?, dailyTime?,
+ *              minDelayMs?, maxDelayMs?, typingDelayMs?, extraInstructions? }
+ *   Returns: 200 { settings: Settings } | 400 | 401 | 500
+ *
+ * GET /api/agent-prompt?day=1-30
+ *   Auth   : none (the prompt is generated without any API key value)
+ *   Returns: 200 { day, model, prompt } | 400 | 404 | 500
+ *
  * OPTIONS * → 204 (CORS preflight for the extension and the CRUD page)
  *
  * Routing note: `vercel.json` rewrites /api/tasks[/:day] to /api/server?path=…
@@ -56,9 +71,29 @@ const crypto = require('crypto');
 
 const DB_NAME = 'clone_webbrain_tasks';
 const COLLECTION = 'tasks';
+const SETTINGS_COLLECTION = 'settings';
 const MIN_DAY = 1;
 const MAX_DAY = 30;
 const MAX_BODY_BYTES = 64 * 1024;
+
+/** Agent settings defaults. Never contains API keys or database credentials. */
+const DEFAULT_SETTINGS = {
+  provider: 'openai',
+  model: 'gpt-4.1',
+  temperature: 0.7,
+  maxTokens: 2048,
+  language: 'English',
+  tone: 'friendly and professional',
+  pageName: '',
+  pageUrl: '',
+  hashtags: '',
+  timezone: 'UTC',
+  dailyTime: '09:00',
+  minDelayMs: 2000,
+  maxDelayMs: 5000,
+  typingDelayMs: 80,
+  extraInstructions: ''
+};
 
 // ---------------------------------------------------------------------------
 // Global (cross-invocation) cache — required on Vercel
@@ -66,7 +101,7 @@ const MAX_BODY_BYTES = 64 * 1024;
 const globalKey = '__cloneWebBrainMongoose';
 let cached = global[globalKey];
 if (!cached) {
-  cached = global[globalKey] = { conn: null, promise: null, Task: null };
+  cached = global[globalKey] = { conn: null, promise: null, Task: null, Settings: null };
 }
 
 const taskSchema = new mongoose.Schema(
@@ -98,12 +133,52 @@ const taskSchema = new mongoose.Schema(
   }
 );
 
+const settingsSchema = new mongoose.Schema(
+  {
+    key: { type: String, default: 'agent', unique: true, index: true },
+    provider: {
+      type: String,
+      enum: ['openai', 'anthropic', 'google', 'openrouter', 'custom'],
+      default: DEFAULT_SETTINGS.provider
+    },
+    model: { type: String, default: DEFAULT_SETTINGS.model, trim: true, maxlength: 100 },
+    temperature: { type: Number, default: DEFAULT_SETTINGS.temperature, min: 0, max: 2 },
+    maxTokens: { type: Number, default: DEFAULT_SETTINGS.maxTokens, min: 256, max: 32000 },
+    language: { type: String, default: DEFAULT_SETTINGS.language, trim: true, maxlength: 40 },
+    tone: { type: String, default: DEFAULT_SETTINGS.tone, trim: true, maxlength: 200 },
+    pageName: { type: String, default: '', trim: true, maxlength: 100 },
+    pageUrl: { type: String, default: '', trim: true, maxlength: 500 },
+    hashtags: { type: String, default: '', trim: true, maxlength: 300 },
+    timezone: { type: String, default: DEFAULT_SETTINGS.timezone, trim: true, maxlength: 60 },
+    dailyTime: { type: String, default: DEFAULT_SETTINGS.dailyTime, trim: true, maxlength: 5 },
+    minDelayMs: { type: Number, default: DEFAULT_SETTINGS.minDelayMs, min: 0, max: 60000 },
+    maxDelayMs: { type: Number, default: DEFAULT_SETTINGS.maxDelayMs, min: 0, max: 60000 },
+    typingDelayMs: { type: Number, default: DEFAULT_SETTINGS.typingDelayMs, min: 0, max: 1000 },
+    extraInstructions: { type: String, default: '', trim: true, maxlength: 2000 }
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+    collection: SETTINGS_COLLECTION,
+    minimize: false
+  }
+);
+
 function getTaskModel() {
   if (!cached.Task) {
     cached.Task =
       mongoose.models.Task || mongoose.model('Task', taskSchema, COLLECTION);
   }
   return cached.Task;
+}
+
+function getSettingsModel() {
+  if (!cached.Settings) {
+    cached.Settings =
+      mongoose.models.AgentSettings ||
+      mongoose.model('AgentSettings', settingsSchema, SETTINGS_COLLECTION);
+  }
+  return cached.Settings;
 }
 
 async function connectDB() {
@@ -142,7 +217,7 @@ async function connectDB() {
 // Helpers
 // ---------------------------------------------------------------------------
 const CORS_HEADERS = {
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-API-Key, X-Admin-Key',
   'Access-Control-Max-Age': '86400'
 };
@@ -270,6 +345,30 @@ function cleanString(value, field, maxLength) {
     throw httpError(400, `${field} must be at most ${maxLength} characters`);
   }
   return trimmed;
+}
+
+function parseNumber(value, field, min, max) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < min || num > max) {
+    throw httpError(400, `${field} must be a number between ${min} and ${max}`);
+  }
+  return num;
+}
+
+function parseInteger(value, field, min, max) {
+  const num = parseNumber(value, field, min, max);
+  if (!Number.isInteger(num)) throw httpError(400, `${field} must be an integer`);
+  return num;
+}
+
+function serializeSettings(doc) {
+  const raw = doc && typeof doc.toObject === 'function' ? doc.toObject() : doc || {};
+  const settings = {};
+  for (const [key, fallback] of Object.entries(DEFAULT_SETTINGS)) {
+    settings[key] = raw[key] === undefined || raw[key] === null ? fallback : raw[key];
+  }
+  settings.updatedAt = raw.updatedAt || null;
+  return settings;
 }
 
 function serializeTask(doc) {
@@ -442,6 +541,201 @@ async function deleteTask(req, res, dayParam) {
   send(res, 200, { deleted: true, day });
 }
 
+async function readSettings() {
+  await connectDB();
+  const Settings = getSettingsModel();
+  const doc = await Settings.findOne({ key: 'agent' }).lean();
+  return serializeSettings(doc);
+}
+
+async function getSettings(req, res) {
+  send(res, 200, { settings: await readSettings() });
+}
+
+const ALLOWED_PROVIDERS = ['openai', 'anthropic', 'google', 'openrouter', 'custom'];
+
+async function putSettings(req, res) {
+  requireAdminKey(req);
+  const body = await readJsonBody(req);
+  const update = {};
+
+  if (body.provider !== undefined) {
+    if (!ALLOWED_PROVIDERS.includes(body.provider)) {
+      throw httpError(400, `provider must be one of: ${ALLOWED_PROVIDERS.join(', ')}`);
+    }
+    update.provider = body.provider;
+  }
+  if (body.model !== undefined) {
+    const model = cleanString(body.model, 'model', 100);
+    if (!model) throw httpError(400, 'model cannot be empty');
+    update.model = model;
+  }
+  if (body.temperature !== undefined) {
+    update.temperature = parseNumber(body.temperature, 'temperature', 0, 2);
+  }
+  if (body.maxTokens !== undefined) {
+    update.maxTokens = parseInteger(body.maxTokens, 'maxTokens', 256, 32000);
+  }
+  if (body.language !== undefined) {
+    update.language = cleanString(body.language, 'language', 40) || DEFAULT_SETTINGS.language;
+  }
+  if (body.tone !== undefined) {
+    update.tone = cleanString(body.tone, 'tone', 200) || DEFAULT_SETTINGS.tone;
+  }
+  if (body.pageName !== undefined) {
+    update.pageName = cleanString(body.pageName, 'pageName', 100) || '';
+  }
+  if (body.pageUrl !== undefined) {
+    const pageUrl = cleanString(body.pageUrl, 'pageUrl', 500) || '';
+    if (pageUrl && !/^https?:\/\/.+/i.test(pageUrl)) {
+      throw httpError(400, 'pageUrl must start with http:// or https://');
+    }
+    update.pageUrl = pageUrl;
+  }
+  if (body.hashtags !== undefined) {
+    update.hashtags = cleanString(body.hashtags, 'hashtags', 300) || '';
+  }
+  if (body.timezone !== undefined) {
+    update.timezone = cleanString(body.timezone, 'timezone', 60) || DEFAULT_SETTINGS.timezone;
+  }
+  if (body.dailyTime !== undefined) {
+    const dailyTime = cleanString(body.dailyTime, 'dailyTime', 5) || '';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(dailyTime)) {
+      throw httpError(400, 'dailyTime must use 24-hour HH:MM format');
+    }
+    update.dailyTime = dailyTime;
+  }
+  if (body.minDelayMs !== undefined) {
+    update.minDelayMs = parseInteger(body.minDelayMs, 'minDelayMs', 0, 60000);
+  }
+  if (body.maxDelayMs !== undefined) {
+    update.maxDelayMs = parseInteger(body.maxDelayMs, 'maxDelayMs', 0, 60000);
+  }
+  if (body.typingDelayMs !== undefined) {
+    update.typingDelayMs = parseInteger(body.typingDelayMs, 'typingDelayMs', 0, 1000);
+  }
+  if (body.extraInstructions !== undefined) {
+    update.extraInstructions = cleanString(body.extraInstructions, 'extraInstructions', 2000) || '';
+  }
+
+  if (Object.keys(update).length === 0) {
+    throw httpError(400, 'No supported settings fields provided');
+  }
+
+  const current = await readSettings();
+  const minDelay = update.minDelayMs === undefined ? current.minDelayMs : update.minDelayMs;
+  const maxDelay = update.maxDelayMs === undefined ? current.maxDelayMs : update.maxDelayMs;
+  if (minDelay > maxDelay) {
+    throw httpError(400, 'minDelayMs cannot be greater than maxDelayMs');
+  }
+
+  const Settings = getSettingsModel();
+  const doc = await Settings.findOneAndUpdate(
+    { key: 'agent' },
+    { $set: update },
+    { new: true, upsert: true, setDefaultsOnInsert: true, runValidators: true }
+  ).lean();
+
+  send(res, 200, { settings: serializeSettings(doc) });
+}
+
+function requestBaseUrl(req) {
+  const proto = String(headerValue(req, 'x-forwarded-proto') || 'https')
+    .split(',')[0]
+    .trim();
+  const host = String(
+    headerValue(req, 'x-forwarded-host') || headerValue(req, 'host') || 'localhost'
+  )
+    .split(',')[0]
+    .trim();
+  return `${proto}://${host}`;
+}
+
+function buildAgentPrompt(day, task, settings, baseUrl) {
+  const pageLine = settings.pageName
+    ? `Facebook Page: ${settings.pageName}`
+    : 'Facebook Page: the page you are already logged into';
+  const pageUrlLine = settings.pageUrl ? `Page URL: ${settings.pageUrl}` : 'Page URL: not configured';
+  const hashtagsLine = settings.hashtags
+    ? `Preferred hashtags: ${settings.hashtags}`
+    : 'Hashtags: use 2-3 relevant hashtags';
+  const extraBlock = settings.extraInstructions
+    ? ['', 'OWNER EXTRA INSTRUCTIONS (highest priority)', settings.extraInstructions, '']
+    : [''];
+
+  return [
+    'You are the Clone WebBrain daily execution agent.',
+    '',
+    'CONTEXT',
+    `- Model to use: ${settings.model} (provider: ${settings.provider}, temperature: ${settings.temperature}, max tokens: ${settings.maxTokens})`,
+    `- API base URL: ${baseUrl}`,
+    `- Today's task day: ${day} (range 1-30)`,
+    `- ${pageLine}`,
+    `- ${pageUrlLine}`,
+    `- Content language: ${settings.language}`,
+    `- Tone: ${settings.tone}`,
+    `- ${hashtagsLine}`,
+    `- Scheduled run: ${settings.dailyTime} (${settings.timezone})`,
+    `- Human delays: ${settings.minDelayMs}-${settings.maxDelayMs} ms between actions; ${settings.typingDelayMs} ms per keystroke`,
+    '- Browser automation: WebBrain MCP server, tool webbrain_run with mode="act".',
+    ...extraBlock,
+    'STEP 1 - FETCH THE TASK',
+    `GET ${baseUrl}/api/tasks/${day}`,
+    'Header: X-API-Key: {{EXTENSION_API_KEY}}',
+    'Header: Accept: application/json',
+    'If the response is 404, stop and report that no task is configured for this day.',
+    'If the response is 401, stop and report that the extension API key was rejected.',
+    'If task.status is already "done", stop and report that the day is already complete.',
+    '',
+    'STEP 2 - READ THE TASK',
+    `Title: ${task.title || ''}`,
+    `Prompt: ${task.prompt || ''}`,
+    `Details: ${task.details || ''}`,
+    'Read the details completely before touching the browser. Do not invent assets, prices or claims.',
+    '',
+    'STEP 3 - EXECUTE ON FACEBOOK',
+    `Open ${settings.pageUrl || 'https://www.facebook.com'} and confirm you are on the correct Page.`,
+    `Use webbrain_run with mode="act". Write in ${settings.language} with a ${settings.tone} tone.`,
+    `Wait ${settings.minDelayMs}-${settings.maxDelayMs} ms between meaningful actions.`,
+    `Type character by character with about ${settings.typingDelayMs} ms per keystroke. Scroll slowly.`,
+    'Never spam, never duplicate a post, never mass-message, and never bypass captchas or checkpoints.',
+    'Do not change security settings, passwords, payment methods, ad billing, reviews or testimonials.',
+    '',
+    'STEP 4 - VERIFY',
+    'Confirm the result is visible in the UI (post on the Page timeline, reply under the comment, updated profile field).',
+    'Only continue when you can point to visible proof.',
+    '',
+    'STEP 5 - MARK DONE ONLY ON SUCCESS',
+    `PATCH ${baseUrl}/api/tasks/${day}`,
+    'Header: X-API-Key: {{EXTENSION_API_KEY}}',
+    'Header: Content-Type: application/json',
+    'Body: { "status": "done", "completedBy": "ai_agent" }',
+    'If this PATCH fails, retry once after 3 seconds, then report the failure.',
+    '',
+    'STEP 6 - REPORT',
+    'Report the day and title, what you did (max 6 bullets), proof of success, the PATCH status code, and any blocker.',
+    '',
+    'FAILURE POLICY',
+    'If any step fails or the result cannot be verified, do NOT call PATCH. Leave the task pending and report the exact blocker.',
+    'The Clone WebBrain extension popup will reflect the updated status after a refresh.'
+  ].join('\n');
+}
+
+async function getAgentPrompt(req, res, query) {
+  const day = parseDay(query.day);
+  await connectDB();
+  const Task = getTaskModel();
+  const task = await Task.findOne({ day }).lean();
+  if (!task) throw httpError(404, `No task found for day ${day}`);
+  const settings = await readSettings();
+  send(res, 200, {
+    day,
+    model: settings.model,
+    provider: settings.provider,
+    prompt: buildAgentPrompt(day, serializeTask(task), settings, requestBaseUrl(req))
+  });
+}
+
 async function health(req, res) {
   let dbState = 'disconnected';
   try {
@@ -470,14 +764,27 @@ async function route(req, res) {
   const resource = parts[0];
   const dayParam = parts[1];
 
+  const knownResources = ['tasks', 'health', 'settings', 'agent-prompt', 'prompt'];
   if (!resource) throw httpError(404, 'Not found. Use /api/tasks or /api/tasks/:day');
-  if (resource !== 'tasks' && resource !== 'health') {
+  if (!knownResources.includes(resource)) {
     throw httpError(404, `Unknown resource "${resource}"`);
   }
 
   if (resource === 'health') {
     if (req.method !== 'GET') throw httpError(405, 'Method not allowed');
     return health(req, res);
+  }
+
+  if (resource === 'settings') {
+    if (dayParam) throw httpError(404, 'Settings does not accept a sub-path');
+    if (req.method === 'GET') return getSettings(req, res);
+    if (req.method === 'PUT' || req.method === 'PATCH') return putSettings(req, res);
+    throw httpError(405, 'Method not allowed');
+  }
+
+  if (resource === 'agent-prompt' || resource === 'prompt') {
+    if (req.method !== 'GET') throw httpError(405, 'Method not allowed');
+    return getAgentPrompt(req, res, query);
   }
 
   if (!dayParam) {

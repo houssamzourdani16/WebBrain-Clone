@@ -12,6 +12,10 @@ server connected, see `.vscode/mcp.json`). Fill in the three placeholders before
 > The extension API key allows reading tasks and marking one done. Never share it publicly and
 > never paste it into a website form. MongoDB credentials are not needed here — the API owns them.
 
+> **Shortcut:** the site's **Agent Settings** page (`/settings.html`) stores your model, page,
+> tone and delays, then generates this prompt pre-filled for a chosen day
+> (`GET /api/agent-prompt?day=N`). The static block below remains the fallback and reference.
+
 ---
 
 ```text

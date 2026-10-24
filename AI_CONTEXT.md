@@ -20,6 +20,8 @@ WebBrain MCP server (`webbrain_run`, `mode="act"`) and marks them done through t
 | Manifest | `manifest.json` | MV3 config, name **Clone WebBrain** | none |
 | API | `api/server.js` | Mongo access, validation, auth, CORS, CRUD | `MONGODB_URI`, `EXTENSION_API_KEY`, `ADMIN_API_KEY` (env) |
 | Admin page | `public/manage.html` | Table + add/edit/delete UI | `ADMIN_API_KEY` in page `localStorage` only |
+| Settings page | `public/settings.html` | Model/voice/delay config (MongoDB) + browser-only keys + prompt generator | `ADMIN_API_KEY`, extension key, optional provider key in page `localStorage` only |
+| Landing page | `public/index.html` | Explains the system, live stats, next task, setup steps | none |
 | Seeder | `scripts/seed.mjs`, `scripts/tasks-data.mjs` | Upsert 30 sample tasks without resetting progress | `MONGODB_URI` via `--env-file` |
 | MCP config | `.vscode/mcp.json` | Registers `@webbrain/mcp-server` as `webbrain` | none |
 | Daily prompt | `DAILY_AGENT_PROMPT.md` | Copy-paste instructions for the agent | placeholders only |
@@ -52,6 +54,36 @@ WebBrain MCP server (`webbrain_run`, `mode="act"`) and marks them done through t
 API serialization adds `id` (string `_id`), `createdAt`, `updatedAt` and always returns
 `completedAt`/`completedBy` as `null` when unset.
 
+### Settings document (`settings` collection, single key `agent`)
+
+Agent configuration lives in the same database, collection **`settings`**, one document with
+`key: "agent"`. It never contains secrets.
+
+```js
+{
+  key: "agent",
+  provider: "openai",            // openai | anthropic | google | openrouter | custom
+  model: "gpt-4.1",
+  temperature: 0.7,              // 0..2
+  maxTokens: 2048,               // 256..32000
+  language: "English",
+  tone: "friendly and professional",
+  pageName: "",
+  pageUrl: "",
+  hashtags: "",
+  timezone: "UTC",
+  dailyTime: "09:00",            // HH:MM, 24h
+  minDelayMs: 2000,              // 0..60000, <= maxDelayMs
+  maxDelayMs: 5000,
+  typingDelayMs: 80,             // 0..1000
+  extraInstructions: "",
+  updatedAt: Date
+}
+```
+
+`GET /api/settings` merges defaults with the stored document. API keys are NOT part of this
+document — the settings page keeps them in the browser's `localStorage` only.
+
 ## 4. API surface
 
 Single Vercel Node function `api/server.js`. `vercel.json` rewrites:
@@ -71,6 +103,9 @@ The handler also parses the raw URL, so it works when invoked directly (`vercel 
 | PATCH | `/api/tasks/:day` | `X-API-Key` **or** `X-Admin-Key` | Agent: `{ status, completedBy }` only. Admin: also `title`, `prompt`, `details`; day immutable |
 | POST | `/api/tasks` | `X-Admin-Key` | `{ day, title, prompt?, details?, status? }`; `409` if day exists |
 | DELETE | `/api/tasks/:day` | `X-Admin-Key` | Returns `{ deleted: true, day }` |
+| GET | `/api/settings` | public | Agent settings with defaults merged; no secrets |
+| PUT | `/api/settings` | `X-Admin-Key` | Validate + upsert the singleton `agent` settings document |
+| GET | `/api/agent-prompt?day=N` | public | Builds the full daily prompt from settings + task; returns `{ day, model, provider, prompt }` |
 | GET | `/api/health` | public | `{ ok, db: "connected"\|"disconnected", time }` |
 | OPTIONS | any | public | `204` CORS preflight |
 
@@ -130,6 +165,11 @@ Do not replace this with per-request connections or `mongoose.connect` in handle
 - Delete uses `window.confirm`.
 - All API calls send `X-Admin-Key`; `401` forces the gate back open.
 - It is served at `/manage.html` from `public/`; `vercel.json` sets `Cache-Control: no-store`.
+
+`public/settings.html` shares the same admin gate and `localStorage` keys. It edits the `settings`
+document (model, temperature, page, tone, delays), stores the extension key and an optional AI
+provider key **in the browser only**, and generates/downloads the daily prompt from
+`/api/agent-prompt`. CORS must keep `PUT` in `Access-Control-Allow-Methods`.
 
 ## 8. Daily AI agent flow
 

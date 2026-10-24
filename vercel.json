@@ -4,6 +4,8 @@
   "rewrites": [
     { "source": "/api/tasks", "destination": "/api/server?path=tasks" },
     { "source": "/api/tasks/:day", "destination": "/api/server?path=tasks/:day" },
+    { "source": "/api/settings", "destination": "/api/server?path=settings" },
+    { "source": "/api/agent-prompt", "destination": "/api/server?path=agent-prompt" },
     { "source": "/api/health", "destination": "/api/server?path=health" }
   ],
   "headers": [
