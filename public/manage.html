@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Clone WebBrain — Manage 30-Day Tasks</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121c2e;
+      --panel-2: #17233a;
+      --border: #26344e;
+      --text: #e6edf7;
+      --muted: #93a4bf;
+      --accent: #5b8def;
+      --accent-2: #3f6fd8;
+      --green: #2fbf71;
+      --amber: #e7a53a;
+      --red: #e0596b;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 600px at 20% -10%, #16233c 0%, var(--bg) 55%);
+      color: var(--text);
+      font: 15px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11, 18, 32, 0.85);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 38px; height: 38px; border-radius: 10px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--accent), #7f5bef);
+      font-weight: 800; letter-spacing: -0.5px;
+    }
+    .brand h1 { font-size: 17px; margin: 0; letter-spacing: 0.2px; }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    main { max-width: 1220px; margin: 0 auto; padding: 26px 20px 80px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+    }
+    h2 { margin: 0 0 6px; font-size: 18px; }
+    .hint { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+    label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      font: inherit;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.18);
+    }
+    textarea { resize: vertical; min-height: 92px; }
+    .grid { display: grid; gap: 14px; }
+    .grid.cols-2 { grid-template-columns: 140px 1fr; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button {
+      border: 1px solid transparent;
+      border-radius: 9px;
+      padding: 10px 16px;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      transition: background 0.15s, transform 0.05s, border-color 0.15s;
+    }
+    button:hover { background: var(--accent-2); }
+    button:active { transform: translateY(1px); }
+    button.ghost { background: transparent; border-color: var(--border); color: var(--text); }
+    button.ghost:hover { background: var(--panel-2); }
+    button.danger { background: transparent; border-color: #5a2733; color: #ff9aa8; }
+    button.danger:hover { background: #3a1b24; }
+    button.small { padding: 6px 11px; font-size: 13px; border-radius: 8px; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .hidden { display: none !important; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .stat { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .stat span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; }
+    .stat strong { font-size: 22px; }
+    .toolbar { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 16px; }
+    .toolbar .grow { flex: 1 1 240px; min-width: 180px; }
+    .toolbar .narrow { width: 170px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    thead th {
+      text-align: left; font-size: 11px; letter-spacing: 0.7px; text-transform: uppercase;
+      color: var(--muted); background: var(--panel-2); padding: 11px 12px;
+      border-bottom: 1px solid var(--border); position: sticky; top: 0;
+    }
+    tbody td { padding: 12px; border-bottom: 1px solid rgba(38, 52, 78, 0.7); vertical-align: top; }
+    tbody tr:hover { background: rgba(91, 141, 239, 0.06); }
+    tbody tr:last-child td { border-bottom: none; }
+    .day { font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .title { font-weight: 600; }
+    .preview { color: var(--muted); font-size: 13px; max-width: 420px; }
+    .preview .more { display: block; margin-top: 4px; color: #b9c8e2; font-size: 12px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .badge.done { color: #a9f0c8; background: rgba(47, 191, 113, 0.14); border: 1px solid rgba(47, 191, 113, 0.4); }
+    .badge.pending { color: #ffd79a; background: rgba(231, 165, 58, 0.12); border: 1px solid rgba(231, 165, 58, 0.4); }
+    .meta { color: var(--muted); font-size: 12px; }
+    dialog {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+      color: var(--text);
+      width: min(640px, calc(100vw - 32px));
+      padding: 0;
+    }
+    dialog::backdrop { background: rgba(3, 7, 14, 0.7); backdrop-filter: blur(2px); }
+    dialog form { padding: 22px; display: grid; gap: 14px; }
+    dialog header { position: static; background: none; padding: 0; border: none; backdrop-filter: none; }
+    dialog h2 { margin: 0; }
+    dialog .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+    .toast {
+      position: fixed; right: 20px; bottom: 20px; z-index: 40;
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-left: 4px solid var(--green);
+      border-radius: 10px; padding: 12px 16px; max-width: 360px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); font-size: 14px;
+    }
+    .toast.error { border-left-color: var(--red); }
+    .empty { text-align: center; color: var(--muted); padding: 34px 10px; }
+    .error-box { margin-top: 16px; border: 1px solid rgba(224, 89, 107, 0.45); background: rgba(224, 89, 107, 0.1); color: #ffb6bf; padding: 12px 14px; border-radius: 10px; font-size: 14px; }
+    .note { font-size: 12.5px; color: var(--muted); border-top: 1px dashed var(--border); margin-top: 20px; padding-top: 14px; }
+    code { background: var(--panel-2); border: 1px solid var(--border); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+    .check-row { display: flex; align-items: center; gap: 8px; }
+    .check-row input { width: auto; }
+    @media (max-width: 760px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid.cols-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">CW</div>
+      <div>
+        <h1>Clone WebBrain</h1>
+        <p>30-Day Task Manager · MongoDB Atlas · Vercel API</p>
+      </div>
+    </div>
+    <button id="lockBtn" class="ghost small hidden" type="button">Lock / change key</button>
+  </header>
+
+  <main>
+    <!-- API key gate -->
+    <section id="gate" class="panel">
+      <h2>Connect to your API</h2>
+      <p class="hint">
+        Enter the Vercel deployment URL and the <code>ADMIN_API_KEY</code>. The key is stored only in
+        this browser's <code>localStorage</code> and is sent as the <code>X-Admin-Key</code> header.
+        MongoDB credentials are never used in the browser.
+      </p>
+      <form id="gateForm" class="grid">
+        <div class="grid cols-2">
+          <div>
+            <label for="apiBase">API base URL</label>
+            <input id="apiBase" name="apiBase" type="url" placeholder="https://your-project.vercel.app" required />
+          </div>
+          <div>
+            <label for="adminKey">Admin API key</label>
+            <input id="adminKey" name="adminKey" type="password" placeholder="X-Admin-Key" autocomplete="off" required />
+          </div>
+        </div>
+        <div class="row">
+          <button type="submit" id="connectBtn">Connect &amp; load tasks</button>
+          <button type="button" id="clearBtn" class="ghost">Clear saved settings</button>
+        </div>
+      </form>
+      <div id="gateError" class="error-box hidden"></div>
+    </section>
+
+    <!-- Manager -->
+    <section id="app" class="hidden">
+      <div class="stats">
+        <div class="stat"><span>Total tasks</span><strong id="statTotal">—</strong></div>
+        <div class="stat"><span>Done</span><strong id="statDone">—</strong></div>
+        <div class="stat"><span>Pending</span><strong id="statPending">—</strong></div>
+        <div class="stat"><span>Progress</span><strong id="statProgress">—</strong></div>
+      </div>
+
+      <div class="panel">
+        <div class="toolbar">
+          <div class="grow">
+            <label for="search">Search</label>
+            <input id="search" type="search" placeholder="Search day, title, prompt or details…" />
+          </div>
+          <div class="narrow">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div class="row">
+            <button type="button" id="refreshBtn" class="ghost">Refresh</button>
+            <button type="button" id="addBtn">+ Add task</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:64px">Day</th>
+                <th style="width:230px">Title</th>
+                <th>Prompt / details</th>
+                <th style="width:110px">Status</th>
+                <th style="width:96px">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="taskRows"></tbody>
+          </table>
+        </div>
+        <div id="tableEmpty" class="empty hidden">No tasks match your filters.</div>
+
+        <p class="note">
+          Only the AI agent should mark a task done through <code>PATCH /api/tasks/:day</code> with
+          the <code>X-API-Key</code>. This page uses <code>X-Admin-Key</code> for create, edit and
+          delete. Task statuses shown in the extension popup update after a refresh.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add / edit dialog -->
+  <dialog id="taskDialog">
+    <form id="taskForm" method="dialog">
+      <header>
+        <h2 id="dialogTitle">Add task</h2>
+        <p class="hint" id="dialogHint">Days are unique (1–30).</p>
+      </header>
+      <div class="grid cols-2">
+        <div>
+          <label for="taskDay">Day</label>
+          <input id="taskDay" type="number" min="1" max="30" step="1" required />
+        </div>
+        <div>
+          <label for="taskTitle">Title</label>
+          <input id="taskTitle" type="text" maxlength="200" required placeholder="Short task title" />
+        </div>
+      </div>
+      <div>
+        <label for="taskPrompt">Prompt (AI instruction)</label>
+        <textarea id="taskPrompt" maxlength="5000" placeholder="What should the AI agent do on facebook.com?"></textarea>
+      </div>
+      <div>
+        <label for="taskDetails">Details (context / acceptance criteria)</label>
+        <textarea id="taskDetails" maxlength="10000" placeholder="Extra constraints, tone, assets, safety notes…"></textarea>
+      </div>
+      <div class="check-row">
+        <input id="taskDone" type="checkbox" />
+        <label for="taskDone" style="margin:0; text-transform:none; letter-spacing:0; font-size:14px; color:var(--text);">
+          Mark as done
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" class="ghost" id="cancelDialog">Cancel</button>
+        <button type="submit" id="saveTaskBtn">Save task</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <script>
+    'use strict';
+    const STORAGE = {
+      base: 'cloneWebBrain.adminApiBase',
+      key: 'cloneWebBrain.adminApiKey'
+    };
+
+    const state = {
+      baseUrl: '',
+      adminKey: '',
+      tasks: [],
+      editingDay: null,
+      loading: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      gate: $('gate'),
+      gateForm: $('gateForm'),
+      gateError: $('gateError'),
+      apiBase: $('apiBase'),
+      adminKey: $('adminKey'),
+      connectBtn: $('connectBtn'),
+      clearBtn: $('clearBtn'),
+      lockBtn: $('lockBtn'),
+      app: $('app'),
+      rows: $('taskRows'),
+      empty: $('tableEmpty'),
+      search: $('search'),
+      statusFilter: $('statusFilter'),
+      refreshBtn: $('refreshBtn'),
+      addBtn: $('addBtn'),
+      statTotal: $('statTotal'),
+      statDone: $('statDone'),
+      statPending: $('statPending'),
+      statProgress: $('statProgress'),
+      dialog: $('taskDialog'),
+      form: $('taskForm'),
+      dialogTitle: $('dialogTitle'),
+      dialogHint: $('dialogHint'),
+      day: $('taskDay'),
+      title: $('taskTitle'),
+      prompt: $('taskPrompt'),
+      details: $('taskDetails'),
+      done: $('taskDone'),
+      saveBtn: $('saveTaskBtn'),
+      cancelDialog: $('cancelDialog'),
+      toast: $('toast')
+    };
+
+    let toastTimer = null;
+
+    function showToast(message, isError) {
+      els.toast.textContent = message;
+      els.toast.classList.toggle('error', Boolean(isError));
+      els.toast.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 4200);
+    }
+
+    function showGateError(message) {
+      if (!message) {
+        els.gateError.classList.add('hidden');
+        els.gateError.textContent = '';
+        return;
+      }
+      els.gateError.textContent = message;
+      els.gateError.classList.remove('hidden');
+    }
+
+    function normalizeBase(url) {
+      return String(url || '').trim().replace(/\/+$/, '');
+    }
+
+    function apiUrl(path) {
+      return `${state.baseUrl}${path}`;
+    }
+
+    async function api(path, options) {
+      const opts = options || {};
+      const headers = Object.assign(
+        { 'X-Admin-Key': state.adminKey },
+        opts.body ? { 'Content-Type': 'application/json' } : {},
+        opts.headers || {}
+      );
+
+      let response;
+      try {
+        response = await fetch(apiUrl(path), {
+          method: opts.method || 'GET',
+          headers,
+          body: opts.body ? JSON.stringify(opts.body) : undefined
+        });
+      } catch (err) {
+        throw new Error(
+          'Network error: could not reach the API. Check the base URL, deployment and CORS. (' +
+            (err && err.message ? err.message : 'failed') +
+            ')'
+        );
+      }
+
+      let data = null;
+      const text = await response.text();
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (_err) {
+          data = { error: text };
+        }
+      }
+
+      if (!response.ok) {
+        const message =
+          (data && data.error) || `Request failed with status ${response.status}`;
+        const error = new Error(message);
+        error.status = response.status;
+        throw error;
+      }
+      return data;
+    }
+
+    function escapeHtml(value) {
+      return String(value === undefined || value === null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function truncate(text, limit) {
+      const value = String(text || '').trim();
+      if (value.length <= limit) return value;
+      return value.slice(0, limit - 1).trimEnd() + '…';
+    }
+
+    function visibleTasks() {
+      const term = els.search.value.trim().toLowerCase();
+      const status = els.statusFilter.value;
+      return state.tasks.filter((task) => {
+        if (status !== 'all' && task.status !== status) return false;
+        if (!term) return true;
+        const haystack = [task.day, task.title, task.prompt, task.details]
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+
+    function updateStats() {
+      const total = state.tasks.length;
+      const done = state.tasks.filter((task) => task.status === 'done').length;
+      const pending = state.tasks.filter((task) => task.status !== 'done').length;
+      els.statTotal.textContent = String(total);
+      els.statDone.textContent = String(done);
+      els.statPending.textContent = String(pending);
+      els.statProgress.textContent = total ? Math.round((done / total) * 100) + '%' : '—';
+    }
+
+    function renderTable() {
+      const tasks = visibleTasks();
+      updateStats();
+
+      if (!tasks.length) {
+        els.rows.innerHTML = '';
+        els.empty.classList.remove('hidden');
+        return;
+      }
+      els.empty.classList.add('hidden');
+
+      els.rows.innerHTML = tasks
+        .map((task) => {
+          const isDone = task.status === 'done';
+          const promptPreview = task.prompt
+            ? `<div>${escapeHtml(truncate(task.prompt, 220))}</div>`
+            : '<div class="meta">No prompt</div>';
+          const detailsPreview = task.details
+            ? `<span class="more">${escapeHtml(truncate(task.details, 160))}</span>`
+            : '';
+          const completion = isDone
+            ? `<div class="meta">${escapeHtml(task.completedBy || 'unknown')}${
+                task.completedAt ? ' · ' + escapeHtml(formatDate(task.completedAt)) : ''
+              }</div>`
+            : '<div class="meta">Waiting for AI agent</div>';
+
+          return `
+            <tr>
+              <td class="day">${escapeHtml(task.day)}</td>
+              <td>
+                <div class="title">${escapeHtml(task.title)}</div>
+                <div class="meta">${isDone ? '✅ Done' : '⏳ Pending'}</div>
+              </td>
+              <td class="preview">${promptPreview}${detailsPreview}</td>
+              <td>
+                <span class="badge ${isDone ? 'done' : 'pending'}">${isDone ? '✅ Done' : '⏳ Pending'}</span>
+                ${completion}
+              </td>
+              <td>
+                <div class="row" style="gap:6px; flex-wrap:nowrap;">
+                  <button type="button" class="ghost small" data-action="edit" data-day="${escapeHtml(task.day)}">Edit</button>
+                  <button type="button" class="danger small" data-action="delete" data-day="${escapeHtml(task.day)}">Delete</button>
+                </div>
+              </td>
+            </tr>`;
+        })
+        .join('');
+    }
+
+    async function loadTasks(options) {
+      if (state.loading) return;
+      const opts = options || {};
+      state.loading = true;
+      els.refreshBtn.disabled = true;
+      els.refreshBtn.textContent = 'Loading…';
+      try {
+        const data = await api('/api/tasks');
+        state.tasks = Array.isArray(data && data.tasks) ? data.tasks : [];
+        state.tasks.sort((a, b) => a.day - b.day);
+        renderTable();
+        showGateError('');
+        if (opts.toast !== false) {
+          showToast(`Loaded ${state.tasks.length} task${state.tasks.length === 1 ? '' : 's'}.`);
+        }
+      } catch (err) {
+        if (err.status === 401) {
+          showToast('Admin key rejected. Check ADMIN_API_KEY and reconnect.', true);
+          disconnect(false);
+          showGateError('The API rejected this admin key (401). Verify ADMIN_API_KEY in Vercel.');
+        } else {
+          showToast(err.message, true);
+          if (opts.showGateError) showGateError(err.message);
+        }
+      } finally {
+        state.loading = false;
+        els.refreshBtn.disabled = false;
+        els.refreshBtn.textContent = 'Refresh';
+      }
+    }
+
+    function setConnected(connected) {
+      els.gate.classList.toggle('hidden', connected);
+      els.app.classList.toggle('hidden', !connected);
+      els.lockBtn.classList.toggle('hidden', !connected);
+    }
+
+    function disconnect(clearStorage) {
+      if (clearStorage !== false) {
+        localStorage.removeItem(STORAGE.key);
+      }
+      state.adminKey = '';
+      state.tasks = [];
+      els.adminKey.value = '';
+      setConnected(false);
+      els.app.classList.add('hidden');
+    }
+
+    function findTask(day) {
+      return state.tasks.find((task) => Number(task.day) === Number(day)) || null;
+    }
+
+    function openAddDialog() {
+      state.editingDay = null;
+      els.dialogTitle.textContent = 'Add task';
+      els.dialogHint.textContent = 'Days are unique (1–30). Pick the next free day.';
+
+      const used = new Set(state.tasks.map((task) => Number(task.day)));
+      let nextDay = 1;
+      while (nextDay <= 30 && used.has(nextDay)) nextDay += 1;
+
+      els.day.value = nextDay <= 30 ? String(nextDay) : '';
+      els.day.disabled = false;
+      els.title.value = '';
+      els.prompt.value = '';
+      els.details.value = '';
+      els.done.checked = false;
+      els.dialog.showModal();
+      els.title.focus();
+    }
+
+    function openEditDialog(day) {
+      const task = findTask(day);
+      if (!task) {
+        showToast(`Task for day ${day} was not found. Refresh the list.`, true);
+        return;
+      }
+      state.editingDay = task.day;
+      els.dialogTitle.textContent = `Edit day ${task.day}`;
+      els.dialogHint.textContent = 'The day number is fixed. Delete and recreate the task to move it.';
+      els.day.value = String(task.day);
+      els.day.disabled = true;
+      els.title.value = task.title || '';
+      els.prompt.value = task.prompt || '';
+      els.details.value = task.details || '';
+      els.done.checked = task.status === 'done';
+      els.dialog.showModal();
+      els.title.focus();
+    }
+
+    async function saveTask(event) {
+      event.preventDefault();
+      const day = Number(els.day.value);
+      const title = els.title.value.trim();
+
+      if (!Number.isInteger(day) || day < 1 || day > 30) {
+        showToast('Day must be an integer between 1 and 30.', true);
+        return;
+      }
+      if (!title) {
+        showToast('Title is required.', true);
+        return;
+      }
+
+      const payload = {
+        title,
+        prompt: els.prompt.value.trim(),
+        details: els.details.value.trim(),
+        status: els.done.checked ? 'done' : 'pending'
+      };
+
+      els.saveBtn.disabled = true;
+      els.saveBtn.textContent = 'Saving…';
+      try {
+        if (state.editingDay === null) {
+          await api('/api/tasks', { method: 'POST', body: Object.assign({ day }, payload) });
+          showToast(`Day ${day} created.`);
+        } else {
+          await api(`/api/tasks/${state.editingDay}`, { method: 'PATCH', body: payload });
+          showToast(`Day ${state.editingDay} updated.`);
+        }
+        els.dialog.close();
+        await loadTasks({ toast: false });
+      } catch (err) {
+        if (err.status === 401) {
+          showToast('Admin key rejected. Reconnect with a valid ADMIN_API_KEY.', true);
+        } else {
+          showToast(err.message, true);
+        }
+      } finally {
+        els.saveBtn.disabled = false;
+        els.saveBtn.textContent = 'Save task';
+      }
+    }
+
+    async function deleteTask(day) {
+      const task = findTask(day);
+      const label = task ? `day ${task.day} — ${task.title}` : `day ${day}`;
+      if (!window.confirm(`Delete ${label}? This cannot be undone.`)) return;
+
+      try {
+        await api(`/api/tasks/${day}`, { method: 'DELETE' });
+        showToast(`Day ${day} deleted.`);
+        await loadTasks({ toast: false });
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function init() {
+      const savedBase =
+        localStorage.getItem(STORAGE.base) ||
+        (location.protocol === 'http:' || location.protocol === 'https:' ? location.origin : '');
+      const savedKey = localStorage.getItem(STORAGE.key) || '';
+
+      els.apiBase.value = savedBase;
+      els.adminKey.value = savedKey;
+
+      els.gateForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const base = normalizeBase(els.apiBase.value);
+        const key = els.adminKey.value.trim();
+
+        if (!/^https?:\/\/.+/i.test(base)) {
+          showGateError('Enter a full URL including http:// or https://');
+          return;
+        }
+        if (!key) {
+          showGateError('Enter your ADMIN_API_KEY.');
+          return;
+        }
+
+        state.baseUrl = base;
+        state.adminKey = key;
+        localStorage.setItem(STORAGE.base, base);
+        localStorage.setItem(STORAGE.key, key);
+
+        els.connectBtn.disabled = true;
+        els.connectBtn.textContent = 'Connecting…';
+        showGateError('');
+        try {
+          const data = await api('/api/tasks');
+          state.tasks = Array.isArray(data && data.tasks) ? data.tasks : [];
+          state.tasks.sort((a, b) => a.day - b.day);
+          setConnected(true);
+          renderTable();
+          showToast(`Connected. ${state.tasks.length} tasks loaded.`);
+        } catch (err) {
+          state.adminKey = '';
+          localStorage.removeItem(STORAGE.key);
+          setConnected(false);
+          showGateError(
+            err.message +
+              ' — verify the API base URL, that the deployment is live, and that ADMIN_API_KEY matches Vercel.'
+          );
+        } finally {
+          els.connectBtn.disabled = false;
+          els.connectBtn.textContent = 'Connect & load tasks';
+        }
+      });
+
+      els.clearBtn.addEventListener('click', () => {
+        localStorage.removeItem(STORAGE.base);
+        localStorage.removeItem(STORAGE.key);
+        els.apiBase.value = '';
+        els.adminKey.value = '';
+        showGateError('');
+        showToast('Saved settings cleared.');
+      });
+
+      els.lockBtn.addEventListener('click', () => {
+        disconnect(true);
+        els.adminKey.focus();
+        showToast('Admin key cleared from this browser.');
+      });
+
+      els.refreshBtn.addEventListener('click', () =>
+        loadTasks({ showGateError: false })
+      );
+
+      els.addBtn.addEventListener('click', openAddDialog);
+      els.cancelDialog.addEventListener('click', () => els.dialog.close());
+      els.form.addEventListener('submit', saveTask);
+
+      els.dialog.addEventListener('close', () => {
+        els.day.disabled = false;
+      });
+
+      els.search.addEventListener('input', renderTable);
+      els.statusFilter.addEventListener('change', renderTable);
+
+      els.rows.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const day = Number(button.getAttribute('data-day'));
+        if (button.getAttribute('data-action') === 'edit') openEditDialog(day);
+        if (button.getAttribute('data-action') === 'delete') deleteTask(day);
+      });
+
+      console.log('[Clone WebBrain] Admin CRUD page ready.');
+
+      if (savedBase && savedKey && /^https?:\/\/.+/i.test(savedBase)) {
+        state.baseUrl = normalizeBase(savedBase);
+        state.adminKey = savedKey;
+        api('/api/tasks')
+          .then((data) => {
+            state.tasks = Array.isArray(data && data.tasks) ? data.tasks : [];
+            state.tasks.sort((a, b) => a.day - b.day);
+            setConnected(true);
+            renderTable();
+          })
+          .catch((err) => {
+            state.adminKey = '';
+            setConnected(false);
+            showGateError(err.message);
+          });
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

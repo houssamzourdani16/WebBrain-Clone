@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "webbrain": {
+      "command": "npx",
+      "args": ["-y", "@webbrain/mcp-server"]
+    }
+  }
+}

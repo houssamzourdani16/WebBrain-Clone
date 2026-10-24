@@ -1,0 +1,18 @@
+{
+  "name": "clone-webbrain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Clone WebBrain — 30-day task system with MongoDB Atlas, a Vercel API, an admin CRUD page and WebBrain MCP automation.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "seed": "node --env-file=.env scripts/seed.mjs",
+    "check": "node --check api/server.js && node --check popup/popup.js && node --check background.js && node --check scripts/seed.mjs && node --check scripts/tasks-data.mjs"
+  },
+  "dependencies": {
+    "mongoose": "^8.6.0"
+  }
+}
